@@ -5,6 +5,13 @@ const Course = require('../models/Course');
 const Enrollment = require('../models/Enrollment');
 const authenticateToken = require('../Middleware/authMiddleware'); // Ensure this middleware is correctly implemented
 
+
+
+
+
+
+
+
 // Get enrolled courses
 router.get('/enrolled', authenticateToken, async (req, res) => {
   try {
@@ -27,6 +34,8 @@ router.get('/enrolled', authenticateToken, async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 });
+
+
 
 // Get available courses (not enrolled)
 router.get('/available', authenticateToken, async (req, res) => {

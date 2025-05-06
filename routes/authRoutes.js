@@ -97,11 +97,7 @@ router.get('/verifyToken', authenticateToken, async (req, res) => {
       return res.json({ user: { email: user.email, role: 'tutor' } });
     }
 
-    // Try to find user in admins
-    user = await Admin.findOne({ email });
-    if (user) {
-      return res.json({ user: { email: user.email, role: 'admin' } });
-    }
+    
 
     return res.status(404).json({ message: 'User not found' });
   } catch (error) {
