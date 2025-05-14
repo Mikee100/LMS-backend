@@ -8,11 +8,13 @@ const courseSchema = new mongoose.Schema({
   thumbnail: Buffer,
   materials: [
     {
-      filename: String,
+      filename: String,       // Stored filename (on disk)
+      originalName: String,   // Original filename from user
       contentType: String,
-      data: Buffer,
-    },
+      path: String    
+    }
   ],
+  
   tutor: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Tutor',

@@ -30,11 +30,14 @@ router.post(
   authenticateTutor,
   upload.fields([
     { name: 'thumbnail', maxCount: 1 },
-    { name: 'materials[]'} // Note: removed brackets
+    { name: 'materials', maxCount: 10 }
   ]),
   async (req, res) => {
     try {
       const { title, description, subject, level } = req.body;
+
+      const thumbnailFile = req.files['thumbnail']?.[0];
+      const materialFiles = req.files['materials'] || [];
 
       const newCourse = new Course({
         title,
@@ -42,35 +45,110 @@ router.post(
         subject,
         level,
         tutor: req.tutor._id,
-        thumbnail: req.files['thumbnail']?.[0]?.path || null,
-        materials: req.files['materials']?.map(file => ({
-          filename: file.originalname,
-          contentType: file.mimetype,
-          path: file.path // Store file path instead of buffer
-        })) || []
+        thumbnailFileId: thumbnailFile?.filename || null,
+
+        // ⬇ Save both original and stored filenames
+        materials: materialFiles.map(file => ({
+          filename: file.filename,             // stored on disk
+          originalName: file.originalname,     // original file name
+          contentType: file.mimetype           // optional
+        }))
       });
 
       await newCourse.save();
       res.status(201).json({ message: 'Course created successfully', course: newCourse });
     } catch (error) {
       console.error(error);
-      // Clean up uploaded files if error occurs
-      if (req.files) {
-        Object.values(req.files).flat().forEach(file => {
-          if (fs.existsSync(file.path)) {
-            fs.unlinkSync(file.path);
-          }
-        });
-      }
       res.status(500).json({ message: 'Server error' });
     }
   }
 );
 
+
+router.put(
+  '/:id',
+  authenticateTutor,
+  upload.fields([
+    { name: 'thumbnail', maxCount: 1 },
+    { name: 'materials', maxCount: 10 }
+  ]),
+  async (req, res) => {
+    try {
+      const courseId = req.params.id;
+      const { title, description, subject, level } = req.body;
+
+      const course = await Course.findById(courseId);
+      if (!course) {
+        return res.status(404).json({ message: 'Course not found' });
+      }
+
+      // Check if the tutor owns the course
+      if (course.tutor.toString() !== req.tutor._id.toString()) {
+        return res.status(403).json({ message: 'Unauthorized access to update course' });
+      }
+
+      // Update text fields
+      if (title) course.title = title;
+      if (description) course.description = description;
+      if (subject) course.subject = subject;
+      if (level) course.level = level;
+
+      // Replace thumbnail if provided
+      if (req.files['thumbnail']) {
+        const newThumbnail = req.files['thumbnail'][0];
+
+        // Delete old thumbnail file from disk if exists
+        if (course.thumbnail && fs.existsSync(course.thumbnail)) {
+          fs.unlinkSync(course.thumbnail);
+        }
+
+        course.thumbnail = newThumbnail.path;
+      }
+
+      // Add new materials if provided
+      if (req.files['materials']) {
+        const newMaterials = req.files['materials'].map(file => ({
+          filename: file.filename,           // actual saved name
+          originalName: file.originalname,   // display name
+          contentType: file.mimetype,
+          path: file.path
+        }));
+
+        course.materials.push(...newMaterials);
+      }
+
+      await course.save();
+      res.json({ message: 'Course updated successfully', course });
+
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: 'Server error while updating course' });
+    }
+  }
+);
+
+
+// GET /api/courses/material/:filename
+router.get('/material/:filename', authenticateTutor, (req, res) => {
+  const filename = req.params.filename;
+  const filePath = path.join(__dirname, '../uploads', filename);
+
+  if (!fs.existsSync(filePath)) {
+    return res.status(404).json({ message: 'File not found' });
+  }
+
+  res.sendFile(filePath);
+});
+
+
+
+
+
+
 router.get('/my/courses', authenticateTutor, async (req, res) => {
   try {
-    const tutorId = req.tutor.id; // You set this in your middleware
-    const courses = await Course.find({ tutor: tutorId }); // ✅ Matches the `tutor` ObjectId
+    const tutorId = req.tutor.id; 
+    const courses = await Course.find({ tutor: tutorId }); 
     res.json(courses);
   } catch (err) {
     console.error(err);

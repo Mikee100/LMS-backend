@@ -7,6 +7,40 @@ const Student = require('../models/Student');
 
 const bcrypt = require('bcryptjs');
 
+const { OAuth2Client } = require('google-auth-library');
+const jwt = require('jsonwebtoken');
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+
+app.post('/google-login', async (req, res) => {
+  const { token } = req.body;
+
+  try {
+    const ticket = await client.verifyIdToken({
+      idToken: token,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+
+    const payload = ticket.getPayload();
+    const email = payload.email;
+    const name = payload.name;
+
+    // Check if user exists or create one
+    let user = await db.query('SELECT * FROM users WHERE email = ?', [email]);
+    if (user.length === 0) {
+      // Create user with default 'student' role
+      await db.query('INSERT INTO users (email, name, role) VALUES (?, ?, ?)', [email, name, 'student']);
+      user = await db.query('SELECT * FROM users WHERE email = ?', [email]);
+    }
+
+    const jwtToken = jwt.sign({ email: user[0].email }, process.env.JWT_SECRET, { expiresIn: '1d' });
+
+    res.json({ token: jwtToken, user: user[0] });
+
+  } catch (error) {
+    res.status(401).json({ message: 'Invalid Google token' });
+  }
+});
+
 router.post('/login', async (req, res) => {
   try {
     const { email, password, role } = req.body;
