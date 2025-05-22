@@ -9,6 +9,8 @@ const studentRoutes = require('./routes/studentRoutes');
 const authRoutes = require('./routes/authRoutes'); 
 const coursesRoute = require('./routes/coursesRoutes');
 const schedulesRoute = require('./routes/schedulesRoute');
+const enrollmentRoutes = require('./routes/enrollmentRoutes');
+
 const app = express();
 
 const corsOptions = {
@@ -24,7 +26,8 @@ app.use('/api/students', studentRoutes);
 app.use('/api/tutors', tutorRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/auth', authRoutes);
-app.use('/api/schedule', schedulesRoute)
+app.use('/api/schedule', schedulesRoute);
+app.use('/api/enroll/students', enrollmentRoutes);
 
 //courses route
 app.use('/api/courses', coursesRoute);

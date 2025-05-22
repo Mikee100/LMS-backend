@@ -13,7 +13,7 @@ const courseSchema = new mongoose.Schema({
       contentType: String,
       path: String    
     }
-  ],
+    ],
   
   tutor: {
     type: mongoose.Schema.Types.ObjectId,
