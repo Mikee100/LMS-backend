@@ -32,6 +32,19 @@ const sectionSchema = new mongoose.Schema({
   description: String,
   materials: [materialSchema],
   lectures: [lectureSchema],
+  isLocked: {
+    type: Boolean,
+    default: false
+  },
+  price: {
+    type: Number,
+    default: 0,
+    min: 0
+  },
+  isFree: {
+    type: Boolean,
+    default: false
+  },
   createdAt: {
     type: Date,
     default: Date.now
@@ -53,6 +66,15 @@ const courseSchema = new mongoose.Schema({
     type: String,
     enum: ['beginner', 'intermediate', 'advanced'],
     default: 'beginner'
+  },
+  price: {
+    type: Number,
+    default: 0,
+    min: 0
+  },
+  isFree: {
+    type: Boolean,
+    default: false
   },
   thumbnail: {
     filename: String,
@@ -79,6 +101,18 @@ const courseSchema = new mongoose.Schema({
 
 // Update timestamps on save
 courseSchema.pre('save', function(next) {
+  this.updatedAt = Date.now();
+  next();
+});
+
+// Update section timestamps when modified
+sectionSchema.pre('save', function(next) {
+  this.updatedAt = Date.now();
+  next();
+});
+
+// Update lecture timestamps when modified
+lectureSchema.pre('save', function(next) {
   this.updatedAt = Date.now();
   next();
 });

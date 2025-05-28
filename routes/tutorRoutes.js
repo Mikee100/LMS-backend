@@ -6,6 +6,10 @@ const bcrypt = require('bcryptjs');
 const { validateTutor } = require('../Middleware/validation');
 
 const authenticateToken = require('../Middleware/authMiddleware');
+const authenticateTutor = require('../Middleware/auth');
+const Course = require('../models/Course');
+const Student = require('../models/Student');
+const Enrollment = require('../models/Enrollment');
 
 router.get("/dashboard", authenticateToken, async (req, res) => {
 
@@ -188,5 +192,47 @@ router.patch('/:id/status', async (req, res) => {
   }
 });
 
+// GET /api/tutors/students
+router.get('/all/students', authenticateTutor, async (req, res) => {
+  try {
+    // Find all enrollments for this tutor
+    const enrollments = await Enrollment.find({ tutor: req.tutor.id })
+      .populate({
+        path: 'student',
+        select: 'firstName lastName email interests studentId enrolledCourses'
+      })
+      .populate({
+        path: 'course',
+        select: 'title'
+      });
+
+    // Map to unique students with their enrolled courses for this tutor
+    const studentsMap = new Map();
+    enrollments.forEach(enrollment => {
+      if (enrollment.student) {
+        const studentId = enrollment.student._id.toString();
+        if (!studentsMap.has(studentId)) {
+          studentsMap.set(studentId, {
+            ...enrollment.student.toObject(),
+            courses: []
+          });
+        }
+        if (enrollment.course) {
+          studentsMap.get(studentId).courses.push({
+            _id: enrollment.course._id,
+            title: enrollment.course.title
+          });
+        }
+      }
+    });
+
+    const students = Array.from(studentsMap.values());
+
+    res.json({ students });
+  } catch (err) {
+    console.error('Error in /api/tutors/all/students:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
 
 module.exports = router;

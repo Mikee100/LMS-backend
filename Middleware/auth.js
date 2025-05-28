@@ -11,7 +11,7 @@ const authenticateTutor = async (req, res, next) => {
     if (!token) return res.status(401).json({ message: 'No token provided' });
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    console.log('Decoded token:', decoded);
+ 
 
     const tutor = await Tutor.findOne({ _id: decoded.userId });
     if (!tutor) return res.status(401).json({ message: 'Tutor not found' });

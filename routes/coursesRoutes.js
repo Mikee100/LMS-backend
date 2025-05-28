@@ -2,6 +2,7 @@ const express = require('express');
 const multer = require('multer');
 const Course = require('../models/Course');
 const authenticateTutor = require('../Middleware/auth');
+const Enrollment = require('../models/Enrollment');
 
 const router = express.Router();
 
@@ -34,7 +35,15 @@ router.put(
   async (req, res) => {
     try {
       const courseId = req.params.id;
-      const { title, description, subject, level, sections } = req.body;
+      const { 
+        title, 
+        description, 
+        subject, 
+        level, 
+        price,
+        isFree,
+        sections 
+      } = req.body;
 
       const course = await Course.findById(courseId);
       if (!course) {
@@ -45,10 +54,13 @@ router.put(
         return res.status(403).json({ message: 'Unauthorized access to update course' });
       }
 
+      // Update basic course info
       if (title) course.title = title;
       if (description) course.description = description;
       if (subject) course.subject = subject;
       if (level) course.level = level;
+      if (price !== undefined) course.price = parseFloat(price) || 0;
+      if (isFree !== undefined) course.isFree = isFree === 'true';
 
       // Convert uploaded files to a map for easier access
       const filesMap = {};
@@ -87,6 +99,9 @@ router.put(
         const newSection = {
           title: sectionData.title,
           description: sectionData.description,
+          isLocked: sectionData.isLocked || false,
+          price: sectionData.price || 0,
+          isFree: sectionData.isFree || false,
           materials: [],
           lectures: []
         };
@@ -283,6 +298,25 @@ router.get('/my/courses', authenticateTutor, async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 });
+
+router.get('/:courseId/enrollments', authenticateTutor, async (req, res) => {
+  try {
+    const { courseId } = req.params;
+
+    const enrollments = await Enrollment.find({
+      course: courseId,
+      tutor: req.tutor._id, // ✅ Fix here
+    }).populate('student', 'firstName lastName email studentId');
+
+    const students = enrollments.map(enrollment => enrollment.student);
+
+    res.status(200).json(students);
+  } catch (err) {
+    console.error('Error fetching enrolled students:', err);
+    res.status(500).json({ error: 'Failed to fetch enrolled students' });
+  }
+});
+
 
 
 

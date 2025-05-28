@@ -10,6 +10,8 @@ const authRoutes = require('./routes/authRoutes');
 const coursesRoute = require('./routes/coursesRoutes');
 const schedulesRoute = require('./routes/schedulesRoute');
 const enrollmentRoutes = require('./routes/enrollmentRoutes');
+const noticationsRoute = require('./routes/notificationsRoute');
+const messageRoutes = require('./routes/messageRoutes');
 
 const app = express();
 
@@ -28,6 +30,8 @@ app.use('/api/upload', uploadRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/schedule', schedulesRoute);
 app.use('/api/enroll/students', enrollmentRoutes);
+app.use('/api/notifications', noticationsRoute)
+app.use('/api/messages',messageRoutes)
 
 //courses route
 app.use('/api/courses', coursesRoute);
