@@ -12,7 +12,7 @@ const schedulesRoute = require('./routes/schedulesRoute');
 const enrollmentRoutes = require('./routes/enrollmentRoutes');
 const noticationsRoute = require('./routes/notificationsRoute');
 const messageRoutes = require('./routes/messageRoutes');
-
+const progressRoutes = require('./routes/progressRoutes');
 const app = express();
 
 const corsOptions = {
@@ -32,6 +32,8 @@ app.use('/api/schedule', schedulesRoute);
 app.use('/api/enroll/students', enrollmentRoutes);
 app.use('/api/notifications', noticationsRoute)
 app.use('/api/messages',messageRoutes)
+
+app.use('/api/progress', progressRoutes);
 
 //courses route
 app.use('/api/courses', coursesRoute);
