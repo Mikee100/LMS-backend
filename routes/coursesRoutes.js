@@ -38,7 +38,7 @@ router.put(
       const { 
         title, 
         description, 
-        subject, 
+        subjects, 
         level, 
         price,
         isFree,
@@ -57,7 +57,17 @@ router.put(
       // Update basic course info
       if (title) course.title = title;
       if (description) course.description = description;
-      if (subject) course.subject = subject;
+   if (subjects) {
+  if (Array.isArray(subjects)) {
+    course.subjects = subjects;
+  } else {
+    try {
+      course.subjects = JSON.parse(subjects);
+    } catch {
+      course.subjects = [subjects];
+    }
+  }
+}
       if (level) course.level = level;
       if (price !== undefined) course.price = parseFloat(price) || 0;
       if (isFree !== undefined) course.isFree = isFree === 'true';

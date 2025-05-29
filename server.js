@@ -13,6 +13,8 @@ const enrollmentRoutes = require('./routes/enrollmentRoutes');
 const noticationsRoute = require('./routes/notificationsRoute');
 const messageRoutes = require('./routes/messageRoutes');
 const progressRoutes = require('./routes/progressRoutes');
+const activityRoutes = require('./routes/activityRoutes');
+const studentProfileRoutes = require('./routes/studentProfileRoutes');
 const app = express();
 
 const corsOptions = {
@@ -35,8 +37,12 @@ app.use('/api/messages',messageRoutes)
 
 app.use('/api/progress', progressRoutes);
 
+app.use('/api/activity', activityRoutes);
+
 //courses route
 app.use('/api/courses', coursesRoute);
+
+app.use('/api/students', studentProfileRoutes);
 
 
 const PORT = process.env.PORT || 5000;
