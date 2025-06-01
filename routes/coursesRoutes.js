@@ -80,21 +80,22 @@ router.put(
       }
 
       // Update thumbnail
-      if (filesMap['thumbnail']) {
-        const newThumbnail = filesMap['thumbnail'][0];
-        if (course.thumbnail?.path && fs.existsSync(course.thumbnail.path)) {
-          fs.unlinkSync(course.thumbnail.path);
-        }
-
-        course.thumbnail = {
-          filename: newThumbnail.filename,
-          originalName: newThumbnail.originalname,
-          contentType: newThumbnail.mimetype,
-          path: newThumbnail.path,
-          size: newThumbnail.size
-        };
-      }
-
+     // ...inside your PUT route...
+if (filesMap['thumbnail']) {
+  const newThumbnail = filesMap['thumbnail'][0];
+  // Remove old file if needed
+  if (course.thumbnail?.path && fs.existsSync(course.thumbnail.path)) {
+    fs.unlinkSync(course.thumbnail.path);
+  }
+  // Save only file info, not binary
+  course.thumbnail = {
+    filename: newThumbnail.filename,
+    originalName: newThumbnail.originalname,
+    contentType: newThumbnail.mimetype,
+    path: newThumbnail.path.replace(/\\/g, '/'), // normalize for URLs
+    size: newThumbnail.size
+  };
+}
       let parsedSections;
       try {
         parsedSections = JSON.parse(sections);

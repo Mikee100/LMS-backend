@@ -1,6 +1,8 @@
 const express = require('express');
 const mongoose = require('mongoose');
+const path = require('path');
 const cors = require('cors');
+const { spawn } = require('child_process');
 require('dotenv').config();
 
 const tutorRoutes = require('./routes/tutorRoutes');
@@ -15,6 +17,7 @@ const messageRoutes = require('./routes/messageRoutes');
 const progressRoutes = require('./routes/progressRoutes');
 const activityRoutes = require('./routes/activityRoutes');
 const studentProfileRoutes = require('./routes/studentProfileRoutes');
+
 const app = express();
 
 const corsOptions = {
@@ -25,7 +28,12 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.use(express.json());
 
+// This line is critical:
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
+
+
+app.use('/api/auth', authRoutes);
 app.use('/api/students', studentRoutes);
 app.use('/api/tutors', tutorRoutes);
 app.use('/api/upload', uploadRoutes);
@@ -44,6 +52,23 @@ app.use('/api/courses', coursesRoute);
 
 app.use('/api/students', studentProfileRoutes);
 
+
+// Express route (backend)
+
+app.post('/api/assignments/generate', async (req, res) => {
+  const { materialFilename } = req.body;
+  const pdfPath = `/path/to/materials/${materialFilename}`; // Adjust as needed
+
+  const py = spawn('python', ['Assignment.py', pdfPath]);
+  let output = '';
+  py.stdout.on('data', (data) => { output += data.toString(); });
+  py.stderr.on('data', (data) => { console.error(data.toString()); });
+  py.on('close', (code) => {
+    if (code !== 0) return res.status(500).json({ message: 'Python script failed' });
+    // Parse output as needed
+    res.json({ assignment: output });
+  });
+});
 
 const PORT = process.env.PORT || 5000;
 

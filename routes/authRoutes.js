@@ -6,8 +6,6 @@ const Student = require('../models/Student');
 const bcrypt = require('bcryptjs');
 
 
-
-// Enhanced login endpoint with logging
 // Enhanced login endpoint with logging
 router.post('/login', async (req, res) => {
   console.log('[Auth] Login attempt:', {
@@ -50,7 +48,7 @@ router.post('/login', async (req, res) => {
         email: user.email
       },
       process.env.JWT_SECRET,
-      { expiresIn: '7d' }
+    { expiresIn: '30d' }
     );
 
     console.log('[Auth] Login successful for:', email);
@@ -86,24 +84,30 @@ const authenticateToken = (req, res, next) => {
   });
 };
 
-// Token verification endpoint
-router.get('/verifyToken', authenticateToken, async (req, res) => {
-  try {
-    const email = req.user.email;
+  // Token verification endpoint
+  router.get('/verifyToken', authenticateToken, async (req, res) => {
+    try {
+      const email = req.user.email;
 
-    // Try to find user in tutors
-    let user = await Tutor.findOne({ email });
-    if (user) {
-      return res.json({ user: { email: user.email, role: 'tutor' } });
+      // Try to find user in tutors
+      let user = await Tutor.findOne({ email });
+      if (user) {
+        return res.json({ user: { email: user.email, role: 'tutor' } });
+      }
+
+      // Try to find user in students
+      user = await Student.findOne({ email });
+      if (user) {
+        return res.json({ user: { email: user.email, role: 'student' } });
+      }
+
+      // If user not found in either collection, log and return 404
+      console.warn(`[Auth] User not found during token verification: ${email}`);
+      return res.status(404).json({ message: 'User not found' });
+    } catch (error) {
+      console.error('Verify token error:', error);
+      res.status(500).json({ message: 'Server error' });
     }
-
-    
-
-    return res.status(404).json({ message: 'User not found' });
-  } catch (error) {
-    console.error('Verify token error:', error);
-    res.status(500).json({ message: 'Server error' });
-  }
-});
+  });
 
 module.exports = router;
