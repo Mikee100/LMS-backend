@@ -3,6 +3,7 @@ import PyPDF2
 from transformers import pipeline
 
 def extract_text_from_pdf(pdf_path):
+    print(pdf_path)
     text = ""
     with open(pdf_path, "rb") as file:
         reader = PyPDF2.PdfReader(file)

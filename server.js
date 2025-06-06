@@ -57,17 +57,52 @@ app.use('/api/students', studentProfileRoutes);
 
 app.post('/api/assignments/generate', async (req, res) => {
   const { materialFilename } = req.body;
-  const pdfPath = `/path/to/materials/${materialFilename}`; // Adjust as needed
+  const pdfPath = path.resolve(__dirname, 'uploads', materialFilename);
 
-  const py = spawn('python', ['Assignment.py', pdfPath]);
+  const py = spawn('python', [
+  path.join(__dirname, 'Assignment.py'),
+  pdfPath // now absolute
+]);
+
   let output = '';
   py.stdout.on('data', (data) => { output += data.toString(); });
-  py.stderr.on('data', (data) => { console.error(data.toString()); });
-  py.on('close', (code) => {
-    if (code !== 0) return res.status(500).json({ message: 'Python script failed' });
-    // Parse output as needed
-    res.json({ assignment: output });
+  py.stderr.on('data', (data) => { 
+  console.error('PYTHON STDERR:', data.toString()); 
+});
+py.stdout.on('data', (data) => { 
+  console.log('PYTHON STDOUT:', data.toString());
+  output += data.toString(); 
+});
+py.on('close', async (code) => {
+  if (code !== 0) {
+    console.error('Python script exited with code', code);
+    return res.status(500).json({ message: 'Python script failed' });
+  }
+
+  // Parse questions from output (split by lines, skip header)
+  const questions = output
+    .split('\n')
+    .filter(line => /^\d+\./.test(line))
+    .map(line => line.replace(/^\d+\.\s*/, '').trim());
+
+  // Save to DB
+  const assignment = await Assignment.create({
+    courseId: req.body.courseId,
+    sectionId: req.body.sectionId,
+    materialFilename: req.body.materialFilename,
+    questions
   });
+
+  res.json({ assignment });
+});
+});
+app.get('/api/assignments', async (req, res) => {
+  const { courseId, sectionId } = req.query;
+  const query = {};
+  if (courseId) query.courseId = courseId;
+  if (sectionId) query.sectionId = sectionId;
+  const assignments = await Assignment.find(query).sort({ createdAt: -1 });
+  res.json(assignments);
 });
 
 const PORT = process.env.PORT || 5000;
